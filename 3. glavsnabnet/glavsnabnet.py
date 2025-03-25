@@ -1,15 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
-from bs4 import BeautifulSoup as BS
-import json
 import csv
 from model import Product
 
-url1 = 'https://glavsnab.net/'
 
 articles = {}
-
-payloads_ = {'query': '6658068859'}
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; '
@@ -26,13 +21,14 @@ def parser(url: str, max_item: int):
     while max_item > count_items:
 
         list_product = []
-        # res = requests.get(url=url, headers=headers)
+        # res = requests.get(url=url, proxies=proxies, headers=headers)
         # res = requests.get(f"{url}&p={page}", params=payloads_, timeout=150, headers=headers)
-        res = requests.get(f"{url}&p={page}", timeout=150, headers=headers)
+        res = requests.get(f"{url}&p={page}", headers=headers, timeout=150)
+
         print(res.url)
+
         soup = BeautifulSoup(res.text, "lxml")
         products = soup.find_all("div", class_="product-card oneclick-enabled")
-        # print(products)
 
         for product in products:
 
@@ -41,19 +37,15 @@ def parser(url: str, max_item: int):
 
             count_items += 1
             name = product.get("data-product-brand")
-            # print(name)
             sku = product.find("span", class_="product-card__key").text
-            # print(sku)
 
             name_elem = product.find("div", class_="product-card__name")
             link = name_elem.find("a").get("href")
-            # print(link)
 
             price_teg = product.find("div", class_="product-card__price")
             price = price_teg.findAll("span", class_="num")[0].get("content")
-            # print(price)
 
-            if (not price == True):
+            if (price != True):
                 price = "По запросу"
             list_product.append(Product(sku=sku,
                                         name=name,
@@ -79,4 +71,6 @@ def write_csv(products: list[Product]):
 
 
 if __name__ == "__main__":
-    parser(url="https://glavsnab.net/santehnika/rakoviny-i-komplektuyushchiye/rakoviny.html?limit=100", max_item = 582)
+    # parser(url="https://glavsnab.net/santehnika/rakoviny-i-komplektuyushchiye/rakoviny.html?limit=100", max_item=180)
+    parser(url="https://glavsnab.net/santehnika/rakoviny-i-komplektuyushchiye/rakoviny.html", max_item=60) # сайт не подгружает всю информацию
+    

@@ -2,3 +2,7 @@
 ./glavsnabnet/__pycache__
 ./glavsnabnet/glavsnab.csv
 ./stopgameru/stopgameru.json
+
+
+./6. cURL_python/.venv
+./7. Python_Selenium_proxy_change_IP/.venv

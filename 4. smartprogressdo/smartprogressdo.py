@@ -25,7 +25,9 @@ payload = {
 
 answ = s.post('https://smartprogress.do/?lang=ru', data=payload)
 answ_bs = BS(answ.content, "html.parser")
-print(answ_bs.find_all("div", class_="contentuser-menu__name"))
+# print(answ_bs.find_all("div", class_="contentuser-menu__name"))
+print(answ_bs)
+
 # парсит неудачно https://smartprogress.do/?lang=ru
 # print(answ_bs.select("div", class_=['user-menu__name']))
 # print("Имя: {}\nУровень: {}\nОпыт: {}".format(
