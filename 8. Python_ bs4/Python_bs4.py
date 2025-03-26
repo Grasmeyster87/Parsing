@@ -2,11 +2,23 @@ import requests
 from bs4 import BeautifulSoup
 from time import sleep
 
-url_quotes_toscrape = 'https://quotes.toscrape.com/'
+# url_quotes_toscrape = 'https://quotes.toscrape.com/'
 
 list_card_url = []
 
 
+def dowload(url):
+    """_summary_
+    DOWLOADS img
+    Args:
+        url (_type_): _description_
+    """
+    resp = requests.get(url, stream=True)
+    # r" для записи служебных символов wb побитная запись
+    r = open("./img/" + url.split("/")[-1], 'wb')
+    for value in resp.iter_content(1024*1024):
+        r.write(value)
+    r.close()
 
 
 def get_url():
@@ -87,11 +99,11 @@ def array():
         text = soup.find("p", class_="card-description").text
         url_img = 'https://scrapingclub.com' + \
             soup.find("img", class_="card-img-top").get("src")
-        
+        dowload(url_img)
         print(name + "\n" + price +
               "\n" + text + "\n" + url_img + "\n\n")
         yield name, price, text, url_img
 
 
 # get_url()
-array()
+array()  # для запуска из файла any_name.py
