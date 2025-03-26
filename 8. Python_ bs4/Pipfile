@@ -8,6 +8,7 @@ autopep8 = "*"
 requests = "*"
 beautifulsoup4 = "*"
 lxml = "*"
+xlsxwriter = "*"
 
 [dev-packages]
 

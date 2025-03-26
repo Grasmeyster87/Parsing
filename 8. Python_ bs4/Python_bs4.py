@@ -6,13 +6,11 @@ url_quotes_toscrape = 'https://quotes.toscrape.com/'
 
 list_card_url = []
 
-count_card = 1
+
 
 
 def get_url():
     for count in range(1, 8):
-
-        sleep(1)
 
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0',
@@ -41,8 +39,9 @@ def get_url():
 
         for i in data_card:
             card_url = 'https://scrapingclub.com' + i.find('a').get("href")
-            print(card_url)
+            # print(card_url)
             list_card_url.append(card_url)
+            yield card_url
 
     def get_info_promo():
         for i in data_card:
@@ -53,11 +52,10 @@ def get_url():
             url_img = 'https://scrapingclub.com' + \
                 i.find('img', class_="card-img-top img-fluid").get('src')
 
-            count_card += 1
             # print(count_card, name + "\n" + price + "\n" + url_img + "\n\n")
 
 
-def data_card():
+def array():
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -75,20 +73,25 @@ def data_card():
         # 'TE': 'trailers',
     }
 
-    for card_url in list_card_url:
-        sleep(1)
+    for card_url in get_url():
+
         response = requests.get(card_url, headers=headers)
+
+        sleep(3)
 
         soup = BeautifulSoup(response.text, 'lxml')  # html.parser
 
         data_card = soup.find("div", class_="p-6")
-        name = soup.find("h3", class_="card-title").text
-        price = soup.find("h4", class_="my-4 card-price").text
+        name = data_card.find("h3", class_="card-title").text
+        price = data_card.find("h4", class_="my-4 card-price").text
         text = soup.find("p", class_="card-description").text
         url_img = 'https://scrapingclub.com' + \
             soup.find("img", class_="card-img-top").get("src")
-        print(name + "\n" + price + "\n" + text + "\n" + url_img + "\n\n")
+        
+        print(name + "\n" + price +
+              "\n" + text + "\n" + url_img + "\n\n")
+        yield name, price, text, url_img
 
 
-get_url()
-data_card()
+# get_url()
+array()
