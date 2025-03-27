@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from time import sleep
 
-# url_quotes_toscrape = 'https://quotes.toscrape.com/'
+
 
 list_card_url = []
 
