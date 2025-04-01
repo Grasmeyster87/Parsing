@@ -7,6 +7,9 @@ name = "pypi"
 requests = "*"
 fake-useragent = "*"
 lxml = "*"
+beautifulsoup4 = "*"
+aiohttp = "*"
+asyncio = "*"
 
 [dev-packages]
 
