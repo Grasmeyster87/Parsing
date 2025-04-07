@@ -12,5 +12,4 @@ class FirstSpiderSpider(scrapy.Spider):
             yield {
                 'title': book.xpath(".//h3/a/@title").get(),
                 'price': book.xpath(".//p[@class='price_color']/text()").get(),
-
             }
