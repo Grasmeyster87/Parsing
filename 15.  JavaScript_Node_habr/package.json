@@ -1,0 +1,23 @@
+{
+  "name": "15.-javascript_node_habr",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.8.4",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "nightmare": "^3.0.2",
+    "node-fetch": "^3.3.2",
+    "playwright": "^1.51.1",
+    "puppeteer": "^24.6.1",
+    "superagent": "^10.2.0",
+    "unirest": "^0.6.0"
+  }
+}
