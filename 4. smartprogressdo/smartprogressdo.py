@@ -1,16 +1,38 @@
 import requests
-from bs4 import BeautifulSoup
 from bs4 import BeautifulSoup as BS
+import fake_useragent
 import json
 
 url = 'https://smartprogress.do/?lang=ru'
 
+user = fake_useragent.UserAgent().random
+
+headers = {
+    'User-Agent': user,
+    'Accept': '*/*',
+    'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
+    # 'Accept-Encoding': 'gzip, deflate, br, zstd',
+    'content-type': 'application/json',
+    'Alt-Used': 'toolbox.googleapps.com',
+    'Connection': 'keep-alive',
+    'Referer': url,
+    # 'Cookie': 'WS_LANG=ru; wt_sessionid=qqivefgqdf2rlpz1ynfcr2stkg1m7syh',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
+    # Requests doesn't support trailers
+    # 'TE': 'trailers',
+}
+
 s = requests.Session()
+s.headers.update(headers)
 
 # get CSRF
 
 auth_html = s.get(url)
-auth_bs = BS(auth_html.content, "html.parser")
+auth_bs = BS(auth_html.content, 'html.parser')
+
+
 csrf = auth_bs.select("input[name=YII_CSRF_TOKEN]")[0]['value']
 # print(csrf)
 
@@ -28,12 +50,9 @@ answ_bs = BS(answ.content, "html.parser")
 # print(answ_bs.find_all("div", class_="contentuser-menu__name"))
 print(answ_bs)
 
-# парсит неудачно https://smartprogress.do/?lang=ru
-# print(answ_bs.select("div", class_=['user-menu__name']))
-# print("Имя: {}\nУровень: {}\nОпыт: {}".format(
-#     answ_bs.select(".user-menu__name")[0].text.strip(),
-#     answ_bs.select(
-#         ".user-menu__info-text user-menu__info-text--lvl")[0].text.strip(),
-#     answ_bs.select(
-#         ".user-menu__info-text user-menu__info-text--exp")[0].text.strip(),
-# ))
+def save_html(page, content):
+    with open(f"page.html", mode='w', encoding="utf-8") as file:
+        file.write(str(answ_bs))
+        print(f"Данные сохранены в файл {page}.html")
+
+save_html('1', answ_bs)
