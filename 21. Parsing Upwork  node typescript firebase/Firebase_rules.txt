@@ -1,0 +1,21 @@
+{
+	"rules": {
+	".read": "auth.uid === neCFzzBhvlebYaqpbSozB4i5iRH2",
+	".write": "auth.uid === neCFzzBhvlebYaqpbSozB4i5iRH2",
+	}
+}
+
+/*
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Проверяем на UID и разрешаем доступ только определённому пользователю
+    match /{document=**} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == "neCFzzBhvlebYaqpbSozB4i5iRH2" 
+        && request.time < timestamp.date(2025, 5, 22);
+    }
+  }
+}
+*/
