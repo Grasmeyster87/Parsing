@@ -16,3 +16,11 @@
 /15.  JavaScript_Node_habr/node_modules/
 /16. NODE.JS SCRAPER  nodejs_ puppeteer_cheerio/node_modules/
 /4. smartprogressdo/users
+/26_Python_Selenium_Chrome_recapcha/.venv
+/26_Python_Selenium_Chrome_recapcha/CaptchaSolverExample/vosk-model-en-us-0.22-lgraph
+/26_Python_Selenium_Chrome_recapcha/CaptchaSolverExample/vosk-model-en-us-0.42-gigaspeech
+/26_Python_Selenium_Chrome_recapcha/CaptchaSolverExample/vosk-model-small-en-us-0.15
+
+*.zip
+*.mp3
+*.wav
