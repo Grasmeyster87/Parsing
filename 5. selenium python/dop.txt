@@ -1,0 +1,22 @@
+# chrome - тут https://www.google.com.sg/intl/en/chrome/
+
+#  https://sites.google.com/chromium.org/driver/ - тут скачиваем гугл драйвер
+
+# Идем на диск C: и тут создаем папку chromedriver
+
+# Добавляем webdriver d path
+
+# Проверяем работу через командную строку
+
+# Бесплатный курс по питону  - https://easysmarthub.ru/courses/python-tajny-kotorye-vam-ne-rasskazhut-drugie-kursy/
+
+# Локальное окружение python VS CODE
+
+# Windows
+# 1. Запустить VS Code от имени администратора, перейти в каталог проекта в PowerShell, выполнить код ниже, появится папка env, содержащая файлы виртуального окружения
+# python -m venv env
+# 2. Изменить политику, в PowerShell набрать
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+# 3. Войти в папку окружения (env), выполнить команду
+# env\Scripts\activate.ps1
+# env\Scripts\activate.bat
