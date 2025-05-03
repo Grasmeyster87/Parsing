@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 python-dotenv = "*"
 selenium = "*"
+sqlite3-0611 = "*"
 
 [dev-packages]
 

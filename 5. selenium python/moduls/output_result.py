@@ -1,4 +1,5 @@
-# Вывести значения всех карточек
-print('Выводим значение карточек:')
-for card in cards:
-    print(card.get_attribute('outerHTML'), '\n\n\n')
+def output_result(cards):
+    """ Вывести значения всех карточек"""
+    print('Выводим значение карточек:')
+    for card in cards:
+        print(card.get_attribute('outerHTML'), '\n\n\n')
