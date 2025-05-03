@@ -6,7 +6,7 @@ from pydub import AudioSegment
 
 def get_text_from_audio():
     """MP3 в текст"""
-    model_path = "./vosk-model-small-en-us-0.15"  # путь к модели
+    model_path = "./vosk-model-en-us-0.42-gigaspeech"  # путь к модели
     vosk.SetLogLevel(-1)
     model = vosk.Model(model_path)
 
