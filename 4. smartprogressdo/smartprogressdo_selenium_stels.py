@@ -11,7 +11,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-import time
+
 
 # Создаем функцию для генерации рандомного User-Agent:
 
@@ -32,8 +32,8 @@ def create_driver(user_id=1):
     options.add_argument("start-maximized")
     # Добавляется экспериментальная опция, исключающая переключатель "enable-automation", чтобы предотвратить автоматическое обнаружение, что браузер управляется WebDriver.
 
-    options.add_experimental_option("excludeSwitches", ["enable-automation"]) 
-     # Добавляется экспериментальная опция, исключающая переключатель "enable-automation", чтобы предотвратить автоматическое обнаружение, что браузер управляется WebDriver.
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    # Добавляется экспериментальная опция, исключающая переключатель "enable-automation", чтобы предотвратить автоматическое обнаружение, что браузер управляется WebDriver.
 
     options.add_experimental_option('useAutomationExtension', False)
     # Добавляется экспериментальная опция, отключающая расширение автоматизации в браузере, что также помогает скрыть использование WebDriver.
@@ -46,7 +46,6 @@ def create_driver(user_id=1):
 
     user_directory = os.path.join(base_directory, f'user_{user_id}')
     # Создается путь к директории конкретного пользователя, используя значение user_id. Например, если user_id равно 1, будет создан путь users/user_1.
-
 
     options.add_argument(f'user-data-dir={user_directory}')
     # Добавляется аргумент для Chrome, указывающий на директорию с данными пользователя. Это позволяет использовать разные профили Chrome для разных пользователей.
@@ -68,7 +67,6 @@ def create_driver(user_id=1):
     # options.add_argument('--headless')
     # Запускает браузер в безголовом режиме (без графического интерфейса, фоном), что полезно для автоматизации и тестирования. С этим аргументом бывают интересные штуки. Иногда драйвер начинает работать быстрее, многда медленнее, а иногда и вовсе сайт это вычисляет и закрывает доступ брузеру. Так что с этим будьте аккуратны. На примере аргумент закомментирован.
 
-
     driver = webdriver.Chrome(options=options)
     # Создается экземпляр WebDriver для Chrome с заданными параметрами options.
 
@@ -87,7 +85,6 @@ def create_driver(user_id=1):
             )
     # Вызывает функцию stealth для маскировки использования WebDriver. Здесь устанавливаются различные параметры, такие как user_agent, languages, vendor, platform, webgl_vendor, renderer, и другие, чтобы сделать браузер менее распознаваемым как управляемый WebDriver.
 
-
     driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
         'source': '''
             delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
@@ -105,10 +102,9 @@ def main_login(user_id=1):
     driver.get('https://smartprogress.do/')
 
     expiriens = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CLASS_NAME, 'user-menu__info-text.user-menu__info-text--exp'))
+        EC.presence_of_element_located(
+            (By.CLASS_NAME, 'user-menu__info-text.user-menu__info-text--exp'))
     ).text
-
-    print(expiriens)
 
     print(expiriens)
     time.sleep(350)

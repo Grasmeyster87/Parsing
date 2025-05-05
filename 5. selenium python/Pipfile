@@ -7,6 +7,8 @@ name = "pypi"
 python-dotenv = "*"
 selenium = "*"
 sqlite3-0611 = "*"
+selenium-stealth = "*"
+fake-useragent = "*"
 
 [dev-packages]
 
