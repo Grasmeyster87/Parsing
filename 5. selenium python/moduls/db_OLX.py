@@ -135,6 +135,16 @@ class OLX_cars_db():
             sqlite_conn.commit()
             print("Дубликаты из 'OLX_card' удалены.")
 
+    @staticmethod
+    def save_card(title, price, link, place, date):
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO OLX_cards (title, price, link, place, date)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (title, price, link, place, date))  # place и date пока пустые
+        conn.commit()
+        conn.close()
 
 # create_db(DB_NAME)
 # create_new_table_olx_cards(name_DB)

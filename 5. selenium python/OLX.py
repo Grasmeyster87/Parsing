@@ -1,196 +1,45 @@
-# Webdriver - это и есть набор команд для управления браузером
-# pip install selenium
-from selenium import webdriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-
-# pipenv install selenium-stealth
-from selenium_stealth import stealth
-from selenium.webdriver.common.keys import Keys
-# pipenv install fake-useragent
-from fake_useragent import UserAgent
-
-import time
-import sqlite3
-import os
-
-# import from moduls
-from moduls.save_to_html import save_to_html
-from moduls.output_result import output_result
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from moduls.getpage import get_cards_sync
+from moduls.get_data_cards import get_data_cards
 from moduls.db_OLX import OLX_cars_db, DB_NAME
 
-number_max = 24
-
-# Создаем функцию для генерации рандомного User-Agent:
-
-
-def get_random_chrome_user_agent():
-    # user_agent = UserAgent(browsers='chrome', os='windows', platforms='pc')
-    # return user_agent.random
-    return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
-
-# Не забудьте создать папку users в корне вашего проекта!
-
-
-def create_driver(user_id=1):
-    # Здесь создается экземпляр класса Options, который используется для настройки поведения Chrome WebDriver.
-
-    options = Options()
-    # Добавляется аргумент для запуска браузера в режиме максимального окна.
-
-    options.add_argument("start-maximized")
-    # Добавляется экспериментальная опция, исключающая переключатель "enable-automation", чтобы предотвратить автоматическое обнаружение, что браузер управляется WebDriver.
-
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    # Добавляется экспериментальная опция, исключающая переключатель "enable-automation", чтобы предотвратить автоматическое обнаружение, что браузер управляется WebDriver.
-
-    options.add_experimental_option('useAutomationExtension', False)
-    # Добавляется экспериментальная опция, отключающая расширение автоматизации в браузере, что также помогает скрыть использование WebDriver.
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    # Эта строка получает абсолютный путь к текущему скрипту и извлекает директорию, в которой он находится. file содержит путь к текущему файлу.
-
-    base_directory = os.path.join(script_dir, 'users')
-    # Создается путь к базовой директории users, которая находится в той же директории, что и текущий скрипт. (если не находится - исправьте). В этой дирректории мы будем хранить папки с пользователями. Далее достаточно будет повторно указать айдишник пользователя и вы сможете «вернуться в профиль».
-
-    user_directory = os.path.join(base_directory, f'user_{user_id}')
-    # Создается путь к директории конкретного пользователя, используя значение user_id. Например, если user_id равно 1, будет создан путь users/user_1.
-
-    options.add_argument(f'user-data-dir={user_directory}')
-    # Добавляется аргумент для Chrome, указывающий на директорию с данными пользователя. Это позволяет использовать разные профили Chrome для разных пользователей.
-
-    options.add_argument('--disable-gpu')
-    # Отключается использование GPU в браузере. Это иногда необходимо для правильной работы в средах без графического интерфейса. Аргумент не обязательный, но можете с ним поиграться.
-
-    """Что значит: Сайт использует WebGL, а в вашем окружении происходит автоматическое переключение на софтовую реализацию, что больше не рекомендуется.
-    Что делать:
-    Если нужно устранить это предупреждение, добавьте флаг в options:"""
-
-    options.add_argument('--enable-unsafe-webgpu')
-    options.add_argument('--enable-unsafe-swiftshader')
-
-    options.add_argument('--disable-dev-shm-usage')
-    # Отключается использование разделяемой памяти /dev/shm. Это может быть полезно для предотвращения проблем с памятью в контейнеризованных средах.
-
-    options.add_argument("--disable-notifications")
-    # Отключаются уведомления в браузере.
-
-    options.add_argument("--disable-popup-blocking")
-    # Отключается блокировка всплывающих окон.
-    options.add_argument('--no-sandbox')
-    # Отключается песочница (sandbox) для повышения стабильности в некоторых средах, но это уменьшает безопасность. Иногда без этого аргумента не запускается вебдрайвер на средах без GUI, но тоже указывать не обязательно.
-
-    # options.add_argument('--headless')
-    # Запускает браузер в безголовом режиме (без графического интерфейса, фоном), что полезно для автоматизации и тестирования. С этим аргументом бывают интересные штуки. Иногда драйвер начинает работать быстрее, многда медленнее, а иногда и вовсе сайт это вычисляет и закрывает доступ брузеру. Так что с этим будьте аккуратны. На примере аргумент закомментирован.
-
-    driver = webdriver.Chrome(options=options)
-    # Создается экземпляр WebDriver для Chrome с заданными параметрами options.
-
-    ua = get_random_chrome_user_agent()
-    # Получает случайный user-agent для Chrome. Это может быть функцией, которую мы написали выше или ваш собственный user-agent.
-
-    stealth(driver=driver,
-            user_agent=ua,
-            languages=["ru-RU", "ru"],
-            vendor="Google Inc.",
-            platform="Win32",
-            webgl_vendor="Intel Inc.",
-            renderer="Intel Iris OpenGL Engine",
-            fix_hairline=True,
-            run_on_insecure_origins=True
-            )
-    # Вызывает функцию stealth для маскировки использования WebDriver. Здесь устанавливаются различные параметры, такие как user_agent, languages, vendor, platform, webgl_vendor, renderer, и другие, чтобы сделать браузер менее распознаваемым как управляемый WebDriver.
-
-    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
-        'source': '''
-            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
-            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
-            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
-      '''
-    })
-    # Выполняет команду CDP (Chrome DevTools Protocol) для удаления определенных свойств из объекта window, которые могут использоваться для обнаружения WebDriver. К примеру с Озон вы не сможете работать без удаления этих свойств с объекта window.
-
-    return driver
-
-user_id=1
-
+# Подготовка базы данных
 OLX_cars_db.create_db(DB_NAME)
 OLX_cars_db.create_new_table_olx_cards(DB_NAME)
 OLX_cars_db.create_new_table_olx_card(DB_NAME)
-    
-def get_cards(number_max):
-    # инициализация драйвера браузера.
-    driver = create_driver(user_id)
-    # driver = webdriver.Chrome()
 
-    # установили паузу на 15 секунд. Если все сделали верно при запуке откроется хром
-    time.sleep(5)
+number_max = 2
+memory = 0
 
-    # С помощью метода GET мы скажем браузеру, что надо открыть
-    number = 1
-    for i in range(1, number_max + 1):
-        driver.get(f"https://www.olx.ua/uk/transport/?page={i}")
-        print(f"parsing page cards №{i} is run")
-        time.sleep(5)
+def gen_page_number(number_max):
+    global memory
+    if memory < number_max:
+        memory += 1
+        return memory
+    return None
 
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "css-qfzx1y"))
-        )
-        # print(f"page link - https://www.olx.ua/uk/transport/?page={i}")
-        # cards = driver.find_elements(By.CLASS_NAME, "css-l9drzq")
+async def get_info(page_number, user_id, loop, executor):
+    data = await loop.run_in_executor(executor, get_cards_sync, page_number, user_id)
+    if data:
+        get_data_cards(data)
 
-        # Родительские элементы карточек
-        cards = driver.find_elements(By.CLASS_NAME, "css-l9drzq")
-        # save_to_html(cards)
-        yield cards
-        
-        time.sleep(3)
-    driver.quit()
+async def main(number_max):
+    loop = asyncio.get_running_loop()
+    executor = ThreadPoolExecutor(max_workers=2)
 
-def get_data_cards(cards):
-            results = []
-            for card in cards:
-                title_element = card.find_element(
-                    By.CLASS_NAME, "css-1g61gc2")  # Заголовок
-                link_element = card.find_element(
-                    By.CLASS_NAME, "css-1tqlkj0")  # Ссылка
-                price_element = card.find_element(
-                    By.CLASS_NAME, "css-uj7mm0")  # Цена
-                place_date_element = card.find_element(
-                    By.CLASS_NAME, "css-vbz67q")  # место и описание короткое
+    tasks = []
+    for i in range(number_max):
+        page = gen_page_number(number_max)
+        if page is not None:
+            tasks.append(get_info(page, i + 1, loop, executor))
 
-                title = title_element.text if title_element else "Нет заголовка"
-                href = link_element.get_attribute(
-                    "href") if link_element else "Нет ссылки"
-                price = price_element.text
-                place_date = place_date_element.text
-                parts = place_date.split(" - ")
+    await asyncio.gather(*tasks)
+    executor.shutdown()
 
-                place = parts[0]
-                date = parts[1]
-
-                results.append({'title': title, 'link': href,
-                            'price': price, 'place': place, 'date': date})
-
-            OLX_cars_db.create_new_strings(DB_NAME, results)
-    
-cards_Obj = get_cards(number_max)
-for cards in cards_Obj:
-    card_data = get_data_cards(cards)
-
-OLX_cars_db.create_index(DB_NAME)
-
-OLX_cars_db.remove_duplicates_olx_cards(DB_NAME)
-OLX_cars_db.remove_duplicates_olx_card(DB_NAME)
-
-# OLX_cars_db.read_DB_OLX_cards(DB_NAME)
-
-# output_result(cards_link)
-# output_result(cards)
-
-# save_to_html(cards)
+    OLX_cars_db.create_index(DB_NAME)
+    OLX_cars_db.remove_duplicates_olx_cards(DB_NAME)
+    OLX_cars_db.remove_duplicates_olx_card(DB_NAME)
 
 if __name__ == '__main__':
-    get_cards(number_max)
+    asyncio.run(main(number_max))
