@@ -9,7 +9,7 @@ OLX_cars_db.create_db(DB_NAME)
 OLX_cars_db.create_new_table_olx_cards(DB_NAME)
 OLX_cars_db.create_new_table_olx_card(DB_NAME)
 
-number_max = 2
+number_max = 10
 memory = 0
 
 def gen_page_number(number_max):

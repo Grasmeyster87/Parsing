@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium_stealth import stealth
 import os
-import time
+import asyncio
 
 
 def create_driver(user_id=1):
@@ -39,55 +39,39 @@ def create_driver(user_id=1):
     return driver
 
 
-def get_cards_sync(page_number, user_id):
-    driver = create_driver(user_id)
+driver = create_driver(user_id=1)
 
-    driver.get(f"https://www.olx.ua/uk/transport/?page={page_number}")
-    print(f"Загрузка страницы №{page_number}")
+page_arr = ['https://www.olx.ua/uk/transport/?page=1', 'https://www.olx.ua/uk/transport/?page=2',
+            'https://www.olx.ua/uk/transport/?page=3', 'https://www.olx.ua/uk/transport/?page=4',
+            'https://www.olx.ua/uk/transport/?page=5']  # массив ссылок
 
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "css-qfzx1y"))
-        )
-        cards = driver.find_elements(By.CLASS_NAME, "css-l9drzq")
-        data = []
+num_tabs = 2 # количество вкладов одновременно открываемых
 
-        for card in cards:
-            try:
-                title = card.find_element(By.CLASS_NAME, "css-1g61gc2").text
-            except:
-                title = "Нет названия"
 
-            try:
-                price = card.find_element(By.CLASS_NAME, "css-uj7mm0").text
-            except:
-                price = "Цена не указана"
+async def get_cards_sync(page_arr, num_tabs):
+    # Открываем недостающие вкладки
+    for _ in range(num_tabs - 1):
+        driver.execute_script("window.open('', '_blank');")
+    await asyncio.sleep(2)
 
-            try:
-                url = card.find_element(By.TAG_NAME, "a").get_attribute("href")
-            except:
-                url = "Нет ссылки"
-            try:
-                place_date_element = card.find_element(
-                    By.CLASS_NAME, "css-vbz67q").text
-                parts = place_date_element.split(" - ")
-                place = parts[0]
-                date = parts[1]
-            except:
-                place = "Нет места или даты"
+    tabs = driver.window_handles  # Обновляем список вкладок
 
-            data.append({"title": title, "price": price,
-                        "url": url, "place": place, "date": date})
+    tab_index = 0  # Указатель на текущую вкладку
 
-        return data
+    while page_arr:
+        driver.switch_to.window(tabs[tab_index])
+        url = page_arr.pop(0)
+        print(f"Вкладка {tab_index} -> {url}")
+        driver.get(url)
 
-    except Exception as e:
-        print(f"Ошибка при загрузке страницы: {e}")
-        return []
+        # Переход к следующей вкладке по кругу
+        tab_index = (tab_index + 1) % num_tabs
 
-    finally:
-        time.sleep(2)
-        driver.quit()
+        await asyncio.sleep(3)  # Пауза между загрузками
 
-# def close_driver():
-#     driver.quit()
+
+def make_page(page_arr, num_tabs):
+    asyncio.run(get_cards_sync(page_arr, num_tabs))
+
+
+make_page(page_arr, num_tabs)
