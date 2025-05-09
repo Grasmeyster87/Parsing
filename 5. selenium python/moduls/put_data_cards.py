@@ -1,7 +1,7 @@
 from moduls.db_OLX import OLX_cars_db
 
 
-def get_data_cards(cards):
+def put_data_cards(cards):
     """Обрабатывает карточки и сохраняет их в базу данных"""
     for card in cards:
         try:
@@ -19,7 +19,7 @@ def get_data_cards(cards):
             # print(f"Ссылка: {date}")
             # print("-" * 40)
 
-            OLX_cars_db.save_card(title=title, price=price,
+            OLX_cars_db.save_cards(title=title, price=price,
                                   link=link, place=place, date=date)
 
         except Exception as e:

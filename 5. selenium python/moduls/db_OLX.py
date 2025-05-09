@@ -1,10 +1,11 @@
 import sqlite3
 
 DB_NAME = "./moduls/OLX_cars_db.db"
+DB_NAME_MODULS = "./OLX_cars_db.db"
 
 
 class OLX_cars_db():
-    def __init__(self, name_DB, title, link, price, place, date, cards):
+    def __init__(self, name_DB, title, link, price, place, date, cards, user, description, olx_cards_id):
         self.name_DB = name_DB
         self.title = title
         self.link = link
@@ -12,6 +13,9 @@ class OLX_cars_db():
         self.place = place
         self.date = date
         self.cards = cards
+        self.user = user
+        self.description = description
+        self.olx_cards_id = olx_cards_id
 
     def create_db(name_DB):
         with sqlite3.connect(name_DB) as sqlite_conn:
@@ -26,14 +30,15 @@ class OLX_cars_db():
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='OLX_cards';")
             if cursor.fetchone() is None:
-                sqlite_request = """CREATE TABLE OLX_cards (
-                id INTEGER PRIMARY KEY,
-                title TEXT NOT NULL,
-                link TEXT,
-                price TEXT,
-                place TEXT,
-                date TEXT
-                );"""
+                sqlite_request = """CREATE TABLE "OLX_cards" (
+                                    "id"	INTEGER,
+                                    "title"	TEXT NOT NULL,
+                                    "link"	TEXT,
+                                    "price"	TEXT,
+                                    "place"	TEXT,
+                                    "date"	TEXT,
+                                    PRIMARY KEY("id")
+                                );"""
                 sqlite_conn.execute(sqlite_request)
                 print("Таблица 'OLX_cards' создана.")
             else:
@@ -47,13 +52,16 @@ class OLX_cars_db():
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='OLX_card';")
             if cursor.fetchone() is None:
-                sqlite_request = """CREATE TABLE OLX_card (
-                id INTEGER PRIMARY KEY,
-                title TEXT NOT NULL,
-                description TEXT,
-                olx_cards_id INTEGER,
-                FOREIGN KEY (olx_cards_id) REFERENCES OLX_cards(id)
-                );"""
+                sqlite_request = """CREATE TABLE "OLX_card" (
+                                    "id"	INTEGER,
+                                    "title"	TEXT,
+                                    "price"	TEXT,
+                                    "user"	TEXT,
+                                    "description"	TEXT,
+                                    "olx_cards_id"	INTEGER NOT NULL,
+                                    PRIMARY KEY("id"),
+                                    FOREIGN KEY("olx_cards_id") REFERENCES "OLX_cards"("id"));
+                                );"""
                 sqlite_conn.execute(sqlite_request)
                 print("Таблица 'OLX_card' создана.")
             else:
@@ -136,7 +144,7 @@ class OLX_cars_db():
             print("Дубликаты из 'OLX_card' удалены.")
 
     @staticmethod
-    def save_card(title, price, link, place, date):
+    def save_cards(title, price, link, place, date):
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         cursor.execute('''
@@ -146,6 +154,85 @@ class OLX_cars_db():
         conn.commit()
         conn.close()
 
+    @staticmethod
+    def save_card(title, price, user, description, olx_cards_id):
+        conn = sqlite3.connect(DB_NAME_MODULS)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO OLX_card (title, price, user, description, olx_cards_id)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (title, price, user, description, olx_cards_id))  # place и date пока пустые
+        conn.commit()
+        conn.close()
+
+    def get_DB_OLX_link_cards(name_DB):
+        try:
+            with sqlite3.connect(DB_NAME_MODULS) as sqlite_conn:
+                sql_request = """SELECT OLX_cards.id, OLX_cards.link
+                             FROM OLX_cards
+                             LEFT JOIN OLX_card ON OLX_cards.id = OLX_card.olx_cards_id
+                             WHERE OLX_card.olx_cards_id IS NULL
+                             LIMIT 50;"""
+
+                sql_cursor = sqlite_conn.execute(sql_request)
+                records = sql_cursor.fetchall()
+                num = 1
+                for card in records:
+                    print(num, card, '\n')
+                    num += 1
+                return records
+        except sqlite3.Error as e:
+            print(f"Ошибка базы данных: {e}")
+   
+    def delete_DB_OLX_null_cards(name_DB):
+        try:
+            with sqlite3.connect(name_DB) as sqlite_conn:
+                cursor = sqlite_conn.cursor()
+
+                # Учитываем:
+                # - SQL NULL
+                # - строку 'NULL'
+                # - пустые строки или пробелы
+                cursor.execute("""
+                    SELECT id, olx_cards_id FROM OLX_card
+                    WHERE (title IS NULL OR TRIM(title) = '' OR title = 'NULL')
+                    AND (price IS NULL OR TRIM(price) = '' OR price = 'NULL')
+                    AND (user IS NULL OR TRIM(user) = '' OR user = 'NULL')
+                    AND (description IS NULL OR TRIM(description) = '' OR description = 'NULL')
+                """)
+                rows = cursor.fetchall()
+                olx_cards_ids = [row[1] for row in rows]
+
+                print(f"Найдено записей OLX_card с пустыми/NULL полями: {len(rows)}")
+                print("olx_cards_id для удаления:", olx_cards_ids)
+
+                if olx_cards_ids:
+                    # Удалить такие записи из OLX_card
+                    cursor.execute("""
+                        DELETE FROM OLX_card
+                        WHERE (title IS NULL OR TRIM(title) = '' OR title = 'NULL')
+                        AND (price IS NULL OR TRIM(price) = '' OR price = 'NULL')
+                        AND (user IS NULL OR TRIM(user) = '' OR user = 'NULL')
+                        AND (description IS NULL OR TRIM(description) = '' OR description = 'NULL')
+                    """)
+
+                    # Удалить связанные OLX_cards
+                    query = f"""
+                        DELETE FROM OLX_cards
+                        WHERE id IN ({','.join('?' for _ in olx_cards_ids)})
+                    """
+                    cursor.execute(query, olx_cards_ids)
+
+                    sqlite_conn.commit()
+                    print("Удаление завершено.")
+                else:
+                    print("Нет записей для удаления.")
+
+        except sqlite3.Error as e:
+            print(f"Ошибка базы данных: {e}")
+
+
+
 # create_db(DB_NAME)
 # create_new_table_olx_cards(name_DB)
 # create_new_table_olx_card(name_DB)
@@ -154,3 +241,7 @@ class OLX_cars_db():
 
 # OLX_cars_db.read_DB(DB_NAME)
 # SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'OLX_cards'; # создан ли индекс
+
+
+# OLX_cars_db.get_DB_OLX_link_cards(DB_NAME_MODULS)
+OLX_cars_db.delete_DB_OLX_null_cards(DB_NAME_MODULS)

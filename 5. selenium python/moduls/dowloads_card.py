@@ -7,6 +7,8 @@ from selenium_stealth import stealth
 import os
 import asyncio
 
+from db_OLX import OLX_cars_db, DB_NAME, DB_NAME_MODULS
+
 
 def create_driver(user_id=1):
     options = Options()
@@ -38,14 +40,11 @@ def create_driver(user_id=1):
     driver.implicitly_wait(5)  # задержка ожидания по умолчанию
     return driver
 
-
 driver = create_driver(user_id=1)
 
-page_arr = ['https://www.olx.ua/uk/transport/?page=1', 'https://www.olx.ua/uk/transport/?page=2',
-            'https://www.olx.ua/uk/transport/?page=3', 'https://www.olx.ua/uk/transport/?page=4',
-            'https://www.olx.ua/uk/transport/?page=5']  # массив ссылок
+num_tabs = 2  # количество вкладов одновременно открываемых
 
-num_tabs = 2 # количество вкладов одновременно открываемых
+page_arr = OLX_cars_db.get_DB_OLX_link_cards(DB_NAME_MODULS)
 
 
 async def get_cards_sync(page_arr, num_tabs):
@@ -58,20 +57,86 @@ async def get_cards_sync(page_arr, num_tabs):
 
     tab_index = 0  # Указатель на текущую вкладку
 
+    data = []
     while page_arr:
         driver.switch_to.window(tabs[tab_index])
-        url = page_arr.pop(0)
+
+        if page_arr:
+            olx_cards_id, url = page_arr.pop(0)
+
         print(f"Вкладка {tab_index} -> {url}")
         driver.get(url)
+        # -------------------------------------- get data
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "css-10ofhqw"))
+            )
+            try:
+                title = driver.find_element(By.CLASS_NAME, "css-10ofhqw").text
+            except:
+                title = "Нет названия"
 
+            try:
+                price = driver.find_element(By.CLASS_NAME, "css-fqcbii").text
+            except:
+                price = "Цена не указана"
+
+            try:
+                user = driver.find_element(By.CLASS_NAME, "css-1titsw2").text
+            except:
+                user = "Пользователь не указан"
+
+            try:
+                description = driver.find_element(
+                    By.CLASS_NAME, "css-19duwlz").text
+            except:
+                description = "Нет описания"
+
+            data.append({"title": title, "price": price,
+                        "user": user, "description": description, "olx_cards_id": olx_cards_id, })
+
+        except Exception as e:
+            print(f"Ошибка при загрузке страницы: {e}")
+            data.append({"title": 'NULL', "price": 'NULL',
+                        "user": 'NULL', "description": 'NULL', "olx_cards_id": olx_cards_id, })
+            # return []
+            continue
+
+
+        finally:
+            await asyncio.sleep(3)
+        # --------------------------------------
         # Переход к следующей вкладке по кругу
         tab_index = (tab_index + 1) % num_tabs
-
         await asyncio.sleep(3)  # Пауза между загрузками
 
+    num = 1
+    for card in data:
+        print(num, card, '\n')
+        num += 1
+    return data
 
-def make_page(page_arr, num_tabs):
-    asyncio.run(get_cards_sync(page_arr, num_tabs))
+
+def put_data_card(cards):
+    """Обрабатывает карточки и сохраняет их в базу данных"""
+    for card in cards:
+        try:
+            title = card.get("title", "Нет названия")
+            price = card.get("price", "Нет цены")
+            # будет сохраняться в поле "link"
+            user = card.get("user", "Нет ссылки")
+            description = card.get("description", "Нет ссылки")
+            olx_cards_id = card.get("olx_cards_id", "Нет ссылки")
+
+            OLX_cars_db.save_card(title=title, price=price,
+                                  user=user, description=description, olx_cards_id = olx_cards_id)
+
+        except Exception as e:
+            print(f"Ошибка при обработке данных: {e}")
 
 
-make_page(page_arr, num_tabs)
+def page_processing(page_arr, num_tabs):
+    return asyncio.run(get_cards_sync(page_arr, num_tabs))
+
+data = page_processing(page_arr, num_tabs)
+put_data_card(data)
