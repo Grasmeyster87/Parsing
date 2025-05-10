@@ -1,3 +1,5 @@
+from moduls.put_data_card import put_data_card
+from moduls.db_OLX import OLX_cars_db, DB_NAME
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -5,9 +7,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium_stealth import stealth
 import os
-import asyncio
+import time
 
-from db_OLX import OLX_cars_db, DB_NAME, DB_NAME_MODULS
+from moduls.CONSTANTS import num_tabs, user_id, limit
+
+import colorama
+from colorama import Fore, Back, Style
+colorama.init()
 
 
 def create_driver(user_id=1):
@@ -15,17 +21,20 @@ def create_driver(user_id=1):
     options.add_argument("start-maximized")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
+    
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--no-sandbox')
+    options.add_argument("--remote-debugging-port=0")
+    # options.add_argument("--disable-gpu")
+    options.add_argument("----enable-unsafe-swiftshader")
 
-    # options.add_argument('--headless')
-    # Запускает браузер в безголовом режиме (без графического интерфейса, фоном), что полезно для автоматизации и тестирования. С этим аргументом бывают интересные штуки. Иногда драйвер начинает работать быстрее, многда медленнее, а иногда и вовсе сайт это вычисляет и закрывает доступ брузеру. Так что с этим будьте аккуратны. На примере аргумент закомментирован.
-
+    # Указываем нужную директорию с профилем
     script_dir = os.path.dirname(os.path.abspath(__file__))
     user_dir = os.path.join(script_dir, 'users', f'user_{user_id}')
-    options.add_argument(f'user-data-dir={user_dir}')
-    # options.add_argument('--disable-gpu')
-    options.add_argument('--enable-unsafe-webgpu')
-    options.add_argument('--no-sandbox')
-    # options.add_argument('--headless')  # включить при необходимости
+    options.add_argument(f"user-data-dir={user_dir}")
+
+    # Если нужно создать директорию, если её нет
+    os.makedirs(user_dir, exist_ok=True)
 
     driver = webdriver.Chrome(options=options)
     stealth(driver,
@@ -40,31 +49,32 @@ def create_driver(user_id=1):
     driver.implicitly_wait(5)  # задержка ожидания по умолчанию
     return driver
 
-driver = create_driver(user_id=1)
 
-num_tabs = 2  # количество вкладов одновременно открываемых
+# driver = create_driver(user_id)
 
-page_arr = OLX_cars_db.get_DB_OLX_link_cards(DB_NAME_MODULS)
+# page_arr = OLX_cars_db.get_DB_OLX_link_cards(DB_NAME, limit)
 
 
-async def get_cards_sync(page_arr, num_tabs):
+def get_card_sync(driver, page_arr, num_tabs):
     # Открываем недостающие вкладки
     for _ in range(num_tabs - 1):
         driver.execute_script("window.open('', '_blank');")
-    await asyncio.sleep(2)
+    time.sleep(2)
 
     tabs = driver.window_handles  # Обновляем список вкладок
 
     tab_index = 0  # Указатель на текущую вкладку
 
     data = []
+    kol_elem_v_mas = len(page_arr)
     while page_arr:
         driver.switch_to.window(tabs[tab_index])
 
         if page_arr:
             olx_cards_id, url = page_arr.pop(0)
 
-        print(f"Вкладка {tab_index} -> {url}")
+        print(
+            f"{Fore.CYAN}Вкладка {tab_index}{Style.RESET_ALL} ({Fore.MAGENTA}{len(page_arr)} из {kol_elem_v_mas}{Style.RESET_ALL})  -> {Fore.CYAN}{url}{Style.RESET_ALL}")
         driver.get(url)
         # -------------------------------------- get data
         try:
@@ -96,47 +106,32 @@ async def get_cards_sync(page_arr, num_tabs):
                         "user": user, "description": description, "olx_cards_id": olx_cards_id, })
 
         except Exception as e:
-            print(f"Ошибка при загрузке страницы: {e}")
+            # print(f"Ошибка при загрузке страницы: {e}")
+            print(Fore.GREEN + "Ошибка при загрузке страницы" + Style.RESET_ALL)
             data.append({"title": 'NULL', "price": 'NULL',
                         "user": 'NULL', "description": 'NULL', "olx_cards_id": olx_cards_id, })
             # return []
             continue
 
-
         finally:
-            await asyncio.sleep(3)
+            time.sleep(3)
         # --------------------------------------
         # Переход к следующей вкладке по кругу
         tab_index = (tab_index + 1) % num_tabs
-        await asyncio.sleep(3)  # Пауза между загрузками
+        time.sleep(3)  # Пауза между загрузками
 
-    num = 1
-    for card in data:
-        print(num, card, '\n')
-        num += 1
+    # num = 1
+    # for card in data:
+    #     print(num, card, '\n')
+    #     num += 1
     return data
 
 
-def put_data_card(cards):
-    """Обрабатывает карточки и сохраняет их в базу данных"""
-    for card in cards:
-        try:
-            title = card.get("title", "Нет названия")
-            price = card.get("price", "Нет цены")
-            # будет сохраняться в поле "link"
-            user = card.get("user", "Нет ссылки")
-            description = card.get("description", "Нет ссылки")
-            olx_cards_id = card.get("olx_cards_id", "Нет ссылки")
 
-            OLX_cars_db.save_card(title=title, price=price,
-                                  user=user, description=description, olx_cards_id = olx_cards_id)
-
-        except Exception as e:
-            print(f"Ошибка при обработке данных: {e}")
+# def page_processing(page_arr, num_tabs):
+#     return get_card_sync(page_arr, num_tabs)
 
 
-def page_processing(page_arr, num_tabs):
-    return asyncio.run(get_cards_sync(page_arr, num_tabs))
-
-data = page_processing(page_arr, num_tabs)
-put_data_card(data)
+# data = page_processing(page_arr, num_tabs)
+# put_data_card(data)
+# OLX_cars_db.delete_DB_OLX_null_cards(DB_NAME_MODULS)

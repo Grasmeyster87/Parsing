@@ -9,6 +9,7 @@ selenium = "*"
 sqlite3-0611 = "*"
 selenium-stealth = "*"
 fake-useragent = "*"
+colorama = "*"
 
 [dev-packages]
 

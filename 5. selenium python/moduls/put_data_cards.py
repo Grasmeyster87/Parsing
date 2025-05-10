@@ -3,6 +3,7 @@ from moduls.db_OLX import OLX_cars_db
 
 def put_data_cards(cards):
     """Обрабатывает карточки и сохраняет их в базу данных"""
+    num = 0
     for card in cards:
         try:
             title = card.get("title", "Нет названия")
@@ -21,6 +22,7 @@ def put_data_cards(cards):
 
             OLX_cars_db.save_cards(title=title, price=price,
                                   link=link, place=place, date=date)
-
+            num += 1
         except Exception as e:
             print(f"Ошибка при обработке данных: {e}")
+    print(f"Обрабатывает карточки и сохраняет их в базу данных {num} записей выполнено успешно")

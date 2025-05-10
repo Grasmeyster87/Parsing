@@ -1,8 +1,6 @@
 import sqlite3
 
-DB_NAME = "./moduls/OLX_cars_db.db"
-DB_NAME_MODULS = "./OLX_cars_db.db"
-
+from moduls.CONSTANTS import DB_NAME
 
 class OLX_cars_db():
     def __init__(self, name_DB, title, link, price, place, date, cards, user, description, olx_cards_id):
@@ -156,7 +154,7 @@ class OLX_cars_db():
 
     @staticmethod
     def save_card(title, price, user, description, olx_cards_id):
-        conn = sqlite3.connect(DB_NAME_MODULS)
+        conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO OLX_card (title, price, user, description, olx_cards_id)
@@ -165,24 +163,28 @@ class OLX_cars_db():
         conn.commit()
         conn.close()
 
-    def get_DB_OLX_link_cards(name_DB):
+    def get_DB_OLX_link_cards(name_DB, limit):
         try:
-            with sqlite3.connect(DB_NAME_MODULS) as sqlite_conn:
-                sql_request = """SELECT OLX_cards.id, OLX_cards.link
-                             FROM OLX_cards
-                             LEFT JOIN OLX_card ON OLX_cards.id = OLX_card.olx_cards_id
-                             WHERE OLX_card.olx_cards_id IS NULL
-                             LIMIT 50;"""
+            # Преобразуем limit в int, чтобы избежать SQL-инъекций
+            limit = int(limit)
+
+            with sqlite3.connect(DB_NAME) as sqlite_conn:
+                sql_request = f"""
+                    SELECT OLX_cards.id, OLX_cards.link
+                    FROM OLX_cards
+                    LEFT JOIN OLX_card ON OLX_cards.id = OLX_card.olx_cards_id
+                    WHERE OLX_card.olx_cards_id IS NULL
+                    LIMIT {limit};
+                """
 
                 sql_cursor = sqlite_conn.execute(sql_request)
                 records = sql_cursor.fetchall()
-                num = 1
-                for card in records:
-                    print(num, card, '\n')
-                    num += 1
                 return records
+
         except sqlite3.Error as e:
             print(f"Ошибка базы данных: {e}")
+        except ValueError:
+            print("Ошибка: параметр limit должен быть числом")
    
     def delete_DB_OLX_null_cards(name_DB):
         try:
@@ -244,4 +246,4 @@ class OLX_cars_db():
 
 
 # OLX_cars_db.get_DB_OLX_link_cards(DB_NAME_MODULS)
-OLX_cars_db.delete_DB_OLX_null_cards(DB_NAME_MODULS)
+# OLX_cars_db.delete_DB_OLX_null_cards(DB_NAME_MODULS)
